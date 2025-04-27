@@ -11,9 +11,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Writers;
 using RunAsyncAfterAddEndpoint;
 using RunAsyncAfterAddEndpoint.apis;
-using RunAsyncAfterAddEndpoint.AppSetting;
+using RunAsyncAfterAddEndpoint.Configuration;
 using RunAsyncAfterAddEndpoint.BackgroundServices;
-using RunAsyncAfterAddEndpoint.database;
 using RunAsyncAfterAddEndpoint.Helpers;
 using RunAsyncAfterAddEndpoint.Models;
 using RunAsyncAfterAddEndpoint.Route;
@@ -24,6 +23,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
+using RunAsyncAfterAddEndpoint.EFCore;
+using Microsoft.EntityFrameworkCore;
+using RunAsyncAfterAddEndpoint.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,13 +34,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 
 builder.Services.AddSingleton<DynamicEndpointDataSource>();
-builder.Services.AddSingleton<RouteEntity>();
+builder.Services.AddSingleton<RouteEntityService>();
 builder.Services.AddSingleton<AppSetting>();
 builder.Services.AddSingleton<DapperHelper>();
+builder.Services.AddScoped<RouteEntity>();
 builder.Services.AddScoped<ApiTemplate>();
 builder.Services.AddScoped<EndpointFactoryHelper>();
 builder.Services.AddScoped<EndpointFactory>();
 builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<RouteAggregateRoot>();
+builder.Services.AddScoped<RouteDBContext>();
 
 // 添加认证服务（以 JWT Bearer 为例）
 builder.Services.AddAuthentication(options =>
@@ -74,6 +79,9 @@ builder.Services.AddHostedService<EndpointHostedService>();
 
 //添加触发更新任务（可删除，自行选择触发方式）
 builder.Services.AddHostedService<CheckRouteDatabgService>();
+
+//添加DBContext
+builder.Services.AddDbContext<RouteDBContext>();
 
 var app = builder.Build();
 

@@ -24,9 +24,9 @@ namespace RunAsyncAfterAddEndpoint
             // 执行脚本，返回委托对象
             var func = await CSharpScript.EvaluateAsync<Delegate>(scriptCode, ScriptOptions.Default
                 .WithReferences(typeof(object).Assembly, typeof(Func<>).Assembly, Assembly.GetExecutingAssembly())
-                .WithImports("System", 
-                    "Microsoft.AspNetCore.Http", 
-                    "RunAsyncAfterAddEndpoint.apis", 
+                .WithImports("System",
+                    "Microsoft.AspNetCore.Http",
+                    "RunAsyncAfterAddEndpoint.apis",
                     "System.Threading.Tasks",
                     "Microsoft.AspNetCore.Mvc"),
                 globals: new RoslynGlobalsModel() { apiTemplate = apiTemplate }

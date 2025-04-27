@@ -3,12 +3,13 @@ using System.Security.Cryptography;
 
 namespace RunAsyncAfterAddEndpoint.BackgroundServices
 {
-    public class CheckRouteDatabgService(IServiceProvider service, RouteEntity routeEntity) : BackgroundService
+    public class CheckRouteDatabgService(IServiceProvider service) : BackgroundService
     {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var scope = service.CreateScope();
             EndpointFactory endpointFactory = scope.ServiceProvider.GetRequiredService<EndpointFactory>();
+            RouteAggregateRoot routeRoot = scope.ServiceProvider.GetRequiredService<RouteAggregateRoot>();
             string oldFileHash = string.Empty;
             while (true)
             {
@@ -16,10 +17,10 @@ namespace RunAsyncAfterAddEndpoint.BackgroundServices
 
                 if (newFileHash != oldFileHash)
                 {
-                    await routeEntity.NotificationChangeAsync(endpointFactory);
+                    await routeRoot.NotificationChangeAsync(endpointFactory);
                     oldFileHash = newFileHash;
                 }
-                await Task.Delay(2000);
+                await Task.Delay(1000);
             }
         }
 

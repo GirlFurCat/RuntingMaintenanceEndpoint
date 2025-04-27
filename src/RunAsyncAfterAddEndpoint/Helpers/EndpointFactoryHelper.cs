@@ -22,8 +22,7 @@ namespace RunAsyncAfterAddEndpoint.Helpers
             //获取需要执行的方法
             string method = GetMethod(route.method, route.response);
 
-            string script = $@"
-        (Delegate)(Func<{paraValuesStr}, Task<ActionResult>>)(async ({paraKeysStr}) => await apiTemplate.{method}(new {{{funcPara}}}, ""{route.sql}""))";
+            string script = $@"(Delegate)(Func<{paraValuesStr}, Task<ActionResult>>)(async ({paraKeysStr}) => await apiTemplate.{method}(new {{{funcPara}}}, ""{route.sql}""))";
 
             return script;
 
