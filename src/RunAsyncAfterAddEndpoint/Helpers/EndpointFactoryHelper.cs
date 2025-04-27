@@ -17,12 +17,13 @@ namespace RunAsyncAfterAddEndpoint.Helpers
             //将Parameter转为String
             string paraKeysStr = ParameterKeyStr(route.parameter);
             string paraValuesStr = ParameterValueStr(route.parameter);
+            string funcPara = FuncDynamicParaStr(route.parameter);
 
             //获取需要执行的方法
             string method = GetMethod(route.method, route.response);
 
             string script = $@"
-        (Delegate)(Func<{paraValuesStr}, Task<ActionResult>>)(async ({paraKeysStr}) => await apiTemplate.{method}(new {{{paraKeysStr}}}, ""{route.sql}""))";
+        (Delegate)(Func<{paraValuesStr}, Task<ActionResult>>)(async ({paraKeysStr}) => await apiTemplate.{method}(new {{{funcPara}}}, ""{route.sql}""))";
 
             return script;
 
@@ -84,6 +85,20 @@ namespace RunAsyncAfterAddEndpoint.Helpers
         private string ParameterKeyStr(Dictionary<string, string> parameters)
         {
             return string.Join(", ", parameters.Keys);
+        }
+
+        /// <summary>
+        /// 创建方法运行时所需要的实体值，根据like判断是否支持模糊查询
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        private string FuncDynamicParaStr(Dictionary<string, string> parameters)
+        {
+            return string.Join(", ", parameters.Select(x =>
+            {
+                string[] para = x.Value.Split('|');
+                return para.Length > 1 && para[1].ToLower() == "like" ? $@"{x.Key}=$""%{{{x.Key}}}%""" : $"{x.Key}";
+            }));
         }
 
         /// <summary>
