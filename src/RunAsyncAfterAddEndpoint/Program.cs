@@ -77,9 +77,6 @@ builder.Services.AddAuthorization(options =>
 //添加端点更新后台
 builder.Services.AddHostedService<EndpointHostedService>();
 
-//添加触发更新任务（可删除，自行选择触发方式）
-builder.Services.AddHostedService<CheckRouteDatabgService>();
-
 //添加DBContext
 builder.Services.AddDbContext<RouteDBContext>();
 
