@@ -1,4 +1,6 @@
 ﻿using Azure;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Routing;
 using RunAsyncAfterAddEndpoint.Route;
 
 namespace RunAsyncAfterAddEndpoint.Helpers
@@ -51,6 +53,18 @@ namespace RunAsyncAfterAddEndpoint.Helpers
             throw new InvalidOperationException(nameof(EndpointFactory));
         }
 
+        /// <summary>
+        /// 生成默认授权策略
+        /// </summary>
+        public AuthorizeAttribute BuilderAuthorize => new AuthorizeAttribute();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="method"></param>
+        /// <param name="IsAuthorize"></param>
+        /// <returns></returns>
+        public EndpointMetadataCollection endpointMetadata(string method, bool IsAuthorize) => IsAuthorize ? new EndpointMetadataCollection(BuilderHttpMethodMetadata(method), BuilderAuthorize) : new EndpointMetadataCollection(BuilderHttpMethodMetadata(method));
 
         /// <summary>
         /// 将Values转化为字符串

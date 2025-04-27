@@ -50,5 +50,15 @@ namespace RunAsyncAfterAddEndpoint.Route
             _OldEntitys.AddRange(newEntitys);
             return (addEntity, removeEntity);
         }
+
+        /// <summary>
+        /// 通知修改
+        /// </summary>
+        public async Task NotificationChangeAsync(EndpointFactory endpointFactory) {
+            if (ChangeDataActive != null) 
+                ChangeDataActive.Invoke(await CheckUpdateAsync(), endpointFactory);
+        }
+
+        public event Action<(List<RouteEntity>, List<RouteEntity>), EndpointFactory>? ChangeDataActive;
     }
 }

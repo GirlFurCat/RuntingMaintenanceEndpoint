@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Routing.Patterns;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Routing.Patterns;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using RunAsyncAfterAddEndpoint.apis;
@@ -39,13 +40,11 @@ namespace RunAsyncAfterAddEndpoint
                 requestDelegate,
                 pattern,
                 order: endpointDataSource.Endpoints.Count + 1,
-                new EndpointMetadataCollection(helper.BuilderHttpMethodMetadata(route.method)),
+                helper.endpointMetadata(route.method, route.authorization),
                 displayName: $"{route.method}-{route.path}"
             );
 
             return endpoint;
         }
-
-        
     }
 }

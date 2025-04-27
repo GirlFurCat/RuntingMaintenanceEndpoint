@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing.Constraints;
 using Microsoft.AspNetCore.Routing.Patterns;
@@ -5,6 +7,7 @@ using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using Microsoft.Extensions.Primitives;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Writers;
 using RunAsyncAfterAddEndpoint;
 using RunAsyncAfterAddEndpoint.apis;
@@ -16,6 +19,8 @@ using RunAsyncAfterAddEndpoint.Route;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.ConstrainedExecution;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 
@@ -34,8 +39,40 @@ builder.Services.AddScoped<EndpointFactoryHelper>();
 builder.Services.AddScoped<EndpointFactory>();
 builder.Services.AddScoped<TokenService>();
 
-builder.Services.AddHostedService<AddEndpointHost>();
+// 添加认证服务（以 JWT Bearer 为例）
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration.GetValue<string>("JwtSettings:Issuer")!,
+        ValidAudience = builder.Configuration.GetValue<string>("JwtSettings:Audience")!,
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration.GetValue<string>("JwtSettings:SecretKey")!))
+    };
+});
 
+// 添加授权服务
+builder.Services.AddAuthorization(options =>
+{
+    options.DefaultPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
+
+//添加端点更新后台
+builder.Services.AddHostedService<EndpointHostedService>();
+
+//添加触发更新任务（可删除，自行选择触发方式）
+builder.Services.AddHostedService<CheckRouteData>();
 
 var app = builder.Build();
 
@@ -46,47 +83,51 @@ if (app.Environment.IsDevelopment())
     
 }
 app.UseHttpsRedirection();
+app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseAddMinalAPI();
 
 // 获取动态数据源实例
 var dynamicDataSource = app.Services.GetRequiredService<DynamicEndpointDataSource>();
 
 // 将动态数据源加入端点数据源集合
-app.UseRouting();
 app.UseEndpoints(endpoints =>
 {
     endpoints.DataSources.Add(dynamicDataSource);
 });
 app.Run();
 
-class AddEndpointHost(DynamicEndpointDataSource _endpointDataSource, RouteEntity routeEntitys, IServiceProvider service) : BackgroundService
+class CheckRouteData(IServiceProvider service, RouteEntity routeEntity) : BackgroundService
 {
-    protected async override Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using var scope = service.CreateScope();
-        ApiTemplate apiTemplate = scope.ServiceProvider.GetRequiredService<ApiTemplate>();
+        var scope = service.CreateScope();
         EndpointFactory endpointFactory = scope.ServiceProvider.GetRequiredService<EndpointFactory>();
-
+        string oldFileHash = string.Empty;
         while (true)
         {
-            EndpointDataSource _EndpointDataSource = scope.ServiceProvider.GetRequiredService<EndpointDataSource>();
-            try
+            string newFileHash = GetFileHash("database/routeData.json");
+
+            if (newFileHash != oldFileHash)
             {
-                //获取需要变更的端点
-                (List<RouteEntity> addEndpoint, List<RouteEntity> removeEndpoint) = await routeEntitys.CheckUpdateAsync(stoppingToken);
-
-                //移除旧端点
-                removeEndpoint.ForEach(x => _endpointDataSource.RemoveEndpoint($"{x.method}-{x.path}"));
-
-                //添加新端点
-                addEndpoint.ForEach(async x => _endpointDataSource.AddEndpoint(await endpointFactory.CreateAsync(x)));
-
-                await Task.Delay(3000);//假定3秒刷新一次路由
+                await routeEntity.NotificationChangeAsync(endpointFactory);
+                oldFileHash = newFileHash;
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine(JsonSerializer.Serialize(ex));
-            }
+            await Task.Delay(2000);
         }
     }
-}
 
+    /// <summary>
+    /// 获取文件Hash值
+    /// </summary>
+    /// <param name="filePath"></param>
+    /// <returns></returns>
+    private string GetFileHash(string filePath)
+    {
+        using var sha256 = SHA256.Create();
+        using var stream = File.OpenRead(filePath);
+        var hashBytes = sha256.ComputeHash(stream);
+        return Convert.ToHexString(hashBytes);
+    }
+}
