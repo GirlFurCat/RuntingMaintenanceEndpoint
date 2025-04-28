@@ -7,7 +7,7 @@ using System.Text.Json;
 
 namespace RunAsyncAfterAddEndpoint.EFCore
 {
-    public class RouteDBContext(AppSetting appSetting) : DbContext
+    public class RouteDBContext(Configuration.AppSetting appSetting) : DbContext
     {
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
