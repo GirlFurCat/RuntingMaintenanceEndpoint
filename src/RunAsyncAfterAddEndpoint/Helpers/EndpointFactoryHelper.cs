@@ -1,6 +1,8 @@
 ﻿using Azure;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.OpenApi.Models;
 using RunAsyncAfterAddEndpoint.Route;
 
 namespace RunAsyncAfterAddEndpoint.Helpers
@@ -59,12 +61,33 @@ namespace RunAsyncAfterAddEndpoint.Helpers
         public AuthorizeAttribute BuilderAuthorize => new AuthorizeAttribute();
 
         /// <summary>
+        /// 生成默认描述
+        /// </summary>
+        public OpenApiOperation BuilderDescription(string description, Dictionary<string, string> para) => new OpenApiOperation() {
+            Description = description,
+            Parameters = BuilderParameter(para)
+        };
+
+        /// <summary>
+        /// 生成参数描述
+        /// </summary>
+        /// <param name="para"></param>
+        /// <returns></returns>
+        public OpenApiParameter[] BuilderParameter(Dictionary<string, string> para) => para.Select(x => new OpenApiParameter()
+        {
+            Name = x.Key,
+            Required = x.Value.IndexOf("?") == -1,
+            In = ParameterLocation.Query
+        }).ToArray();
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="method"></param>
         /// <param name="IsAuthorize"></param>
+        /// <param name="description"></param>
         /// <returns></returns>
-        public EndpointMetadataCollection endpointMetadata(string method, bool IsAuthorize) => IsAuthorize ? new EndpointMetadataCollection(BuilderHttpMethodMetadata(method), BuilderAuthorize) : new EndpointMetadataCollection(BuilderHttpMethodMetadata(method));
+        public EndpointMetadataCollection endpointMetadata(RouteEntity route) => route.authorization ? new EndpointMetadataCollection(BuilderHttpMethodMetadata(route.method), BuilderDescription(route.introduction, route.parameter), BuilderAuthorize) : new EndpointMetadataCollection(BuilderHttpMethodMetadata(route.method), BuilderDescription(route.introduction, route.parameter));
 
         /// <summary>
         /// 将Values转化为字符串

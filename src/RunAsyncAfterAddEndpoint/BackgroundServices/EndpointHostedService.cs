@@ -1,4 +1,5 @@
 ﻿using RunAsyncAfterAddEndpoint.apis;
+using RunAsyncAfterAddEndpoint.Configuration;
 using RunAsyncAfterAddEndpoint.Core;
 using RunAsyncAfterAddEndpoint.Route;
 using System.Text.Json;
@@ -12,8 +13,8 @@ namespace RunAsyncAfterAddEndpoint.BackgroundServices
             using var scope = service.CreateScope();
             ApiTemplate apiTemplate = scope.ServiceProvider.GetRequiredService<ApiTemplate>();
             EndpointFactory endpointFactory = scope.ServiceProvider.GetRequiredService<EndpointFactory>();
-
             routeService.ChangeDataActive += RouteEntitys_ChangeDataActive;
+            await routeService.NotificationChangeAsync(endpointFactory);
         }
 
         private void RouteEntitys_ChangeDataActive((List<RouteEntity> addEndpoint, List<RouteEntity> removeEndpoint) obj, EndpointFactory endpointFactory)

@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using RunAsyncAfterAddEndpoint.Configuration;
 using RunAsyncAfterAddEndpoint.EFCore;
+using RunAsyncAfterAddEndpoint.Helpers;
 using RunAsyncAfterAddEndpoint.Route;
 using System.Text.Json;
 
@@ -7,7 +9,7 @@ namespace RunAsyncAfterAddEndpoint.Core
 {
     public class RouteEntityService(IServiceProvider service)
     {
-        public async Task<List<RouteEntity>> BuildRouteAsync(CancellationToken? token = null)
+        private async Task<List<RouteEntity>> BuildRouteAsync(CancellationToken? token = null)
         {
             using var scope = service.CreateScope();
             var routeDb = scope.ServiceProvider.GetRequiredService<RouteAggregateRoot>();
@@ -15,6 +17,7 @@ namespace RunAsyncAfterAddEndpoint.Core
         }
 
         private List<RouteEntity> _OldEntitys = new List<RouteEntity>();
+
         public async Task<(List<RouteEntity>, List<RouteEntity>)> CheckUpdateAsync(CancellationToken? token = null)
         {
             List<RouteEntity> newEntitys = await BuildRouteAsync(token);
@@ -39,6 +42,10 @@ namespace RunAsyncAfterAddEndpoint.Core
         {
             if (ChangeDataActive != null)
                 ChangeDataActive.Invoke(await CheckUpdateAsync(), endpointFactory);
+
+            var scope = service.CreateScope();
+            var swaggerDoc = scope.ServiceProvider.GetRequiredService<BuilderSwaggerDoc>();
+            await swaggerDoc.InvokeAsync();
         }
 
         public event Action<(List<RouteEntity>, List<RouteEntity>), EndpointFactory>? ChangeDataActive;

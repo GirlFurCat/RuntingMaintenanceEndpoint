@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Primitives;
 
-namespace RunAsyncAfterAddEndpoint
+namespace RunAsyncAfterAddEndpoint.Configuration
 {
     public class DynamicEndpointDataSource : EndpointDataSource
     {

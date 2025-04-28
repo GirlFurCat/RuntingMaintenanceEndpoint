@@ -26,12 +26,24 @@ using System.Threading;
 using RunAsyncAfterAddEndpoint.EFCore;
 using Microsoft.EntityFrameworkCore;
 using RunAsyncAfterAddEndpoint.Core;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+//builder.Services.AddOpenApi();
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(builder =>
+{
+    builder.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "Swagger API",
+        Version = "v1"
+    });
+});
 
 builder.Services.AddSingleton<DynamicEndpointDataSource>();
 builder.Services.AddSingleton<RouteEntityService>();
@@ -44,6 +56,8 @@ builder.Services.AddScoped<EndpointFactory>();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<RouteAggregateRoot>();
 builder.Services.AddScoped<RouteDBContext>();
+builder.Services.AddScoped<BuilderSwaggerDoc>();
+builder.Services.AddScoped<RouteService>();
 
 // 添加认证服务（以 JWT Bearer 为例）
 builder.Services.AddAuthentication(options =>
@@ -81,25 +95,35 @@ builder.Services.AddHostedService<EndpointHostedService>();
 builder.Services.AddDbContext<RouteDBContext>();
 
 var app = builder.Build();
+app.UseStaticFiles();
+app.UseHttpsRedirection();
+app.UseRouting();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-    
+    //app.MapOpenApi();
+
+    app.UseSwagger();
+    // 配置 Swagger UI
+    app.UseSwaggerUI(option =>
+    {
+        option.SwaggerEndpoint("Swagger/swagger.json", "Swagger API V1 Docs");
+        //option.SwaggerEndpoint("/openapi/v1.json?t={timestamp}", "OpenAPI V1 Docs");
+        option.RoutePrefix = string.Empty;
+        option.DocumentTitle = "SparkTodo API";
+    });
 }
-app.UseHttpsRedirection();
-app.UseRouting();
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAddMinalAPI();
 
-// 获取动态数据源实例
+// 获取动态数据源实例，将动态数据源加入端点数据源集合
 var dynamicDataSource = app.Services.GetRequiredService<DynamicEndpointDataSource>();
-
-// 将动态数据源加入端点数据源集合
 app.UseEndpoints(endpoints =>
 {
     endpoints.DataSources.Add(dynamicDataSource);
 });
+
 app.Run();

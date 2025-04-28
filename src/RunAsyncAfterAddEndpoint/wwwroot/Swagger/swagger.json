@@ -1,0 +1,92 @@
+{
+  "openapi": "3.0.4",
+  "info": {
+    "title": "Auto Generated API",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/admin/token": {
+      "get": {
+        "summary": "获取令牌",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/route": {
+      "post": {
+        "summary": "增加新路由",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "put": {
+        "summary": "更新指定路由",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "delete": {
+        "summary": "删除指定路由",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/v1/route": {
+      "get": {
+        "summary": "查询路由",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path"
+          },
+          {
+            "name": "method",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "response",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/v1/{id}/user": {
+      "get": {
+        "summary": "查找用户",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    }
+  }
+}

@@ -16,7 +16,7 @@ namespace RunAsyncAfterAddEndpoint
         public async Task<Endpoint> CreateAsync(RouteEntity route)
         {
             //创建地址
-            var pattern = RoutePatternFactory.Parse(route.path);
+            var pattern = RoutePatternFactory.Parse(route.path.Replace("{version}", route.version));
 
             //生成脚本
             string scriptCode = helper.BuilderScript(route);
@@ -40,7 +40,7 @@ namespace RunAsyncAfterAddEndpoint
                 requestDelegate,
                 pattern,
                 order: endpointDataSource.Endpoints.Count + 1,
-                helper.endpointMetadata(route.method, route.authorization),
+                helper.endpointMetadata(route),
                 displayName: $"{route.method}-{route.path}"
             );
 
